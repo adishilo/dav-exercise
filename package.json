@@ -1,0 +1,23 @@
+{
+  "name": "dav-exercise",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adishilo/dav-exercise.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/adishilo/dav-exercise/issues"
+  },
+  "homepage": "https://github.com/adishilo/dav-exercise#readme",
+  "dependencies": {
+    "express": "^4.16.4",
+    "geolib": "^2.0.24"
+  }
+}

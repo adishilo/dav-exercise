@@ -2,8 +2,7 @@ const express = require('express');
 const config = require('./config');
 const consts = require('./consts');
 const path = require('path');
-const VehicleManager = require('./VehicleManager');
-const vehicleManager = new VehicleManager(path.resolve(__dirname, '../vehicles-init.json'));
+const vehicleManager = require('./VehicleManager');
 
 class Server {
     constructor() {
@@ -11,7 +10,7 @@ class Server {
         this.app.use(express.json());
 
         this.app.get('/status/:vehicle_id', async (request, response, next) => {
-            let replyBody = vehicleManager.getVehicleInfo(request.params.vehicle_id);
+            let replyBody = await vehicleManager.getVehicleInfo(request.params.vehicle_id);
 
             if (!replyBody) {
                 response.status(consts.httpStatuses.badRequest).send(`No such vehicle with ID ${request.params.vehicle_id}`);
@@ -23,7 +22,9 @@ class Server {
             next();
         });
 
-        this.app.listen(config.serverPort, () => {
+        this.app.listen(config.serverPort, async () => {
+            await vehicleManager.registerVehicles(path.resolve(__dirname, '../vehicles-init.json'));
+
             console.log(`Now listening on port ${config.serverPort}`);
         });
     }

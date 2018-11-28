@@ -1,8 +1,10 @@
 const geo = require('geolib');
 const VehicleState = require('./dto/VehicleState');
+const redisClient = require('./RedisPromisifier');
+const consts = require('./consts');
 
 class VehicleManager {
-    constructor(fileName) {
+    async registerVehicles(fileName) {
         this.vehicles = require(fileName);
 
         let now = Date.now();
@@ -17,17 +19,33 @@ class VehicleManager {
                 { latitude: vehicle.pickup_lat, longitude: vehicle.pickup_long },
                 { latitude: vehicle.dropoff_lat, longitude: vehicle.dropoff_long }
             );
+            vehicle.state = 'travelling';
+            vehicle.currentLatitude = vehicle.pickup_lat;
+            vehicle.currentLongtitude = vehicle.pickup_long;
+
+            try {
+                await redisClient.zadd(consts.vehiclesSetName, vehicle.vehicle_id, JSON.stringify(vehicle)).catch(reason => { throw reason; });
+            } catch (error) {
+                console.log(`Could not insert vehicle ${vehicle.vehicle_id} to the DB`);
+            }
         }
     }
 
-    getVehicleInfo(vehicleId) {
-        for (let vehicle of this.vehicles) {
-            if (vehicle.vehicle_id === vehicleId) {
-                return this.formatReply(vehicle);
-            }
-        }
+    async getVehicleInfo(vehicleId) {
+        try {
+            let vehicle = JSON.parse(await redisClient.zrangebyscore(consts.vehiclesSetName, vehicleId, vehicleId).catch(reason => { throw reason }));
+            let reply = this.formatReply(vehicle);
 
-        return undefined;
+            vehicle.status = reply.status;
+            vehicle.dropoff_lat = reply.dropoff_lat;
+            vehicle.dropoff_long = reply.dropoff_long;
+
+            // Update Redis with the 'vehicle' structure..
+
+            return reply;
+        } catch (error) {
+            return undefined;
+        }
     }
 
     formatReply(vehicle) {
@@ -56,4 +74,4 @@ class VehicleManager {
     }
 }
 
-module.exports = VehicleManager;
+module.exports = new VehicleManager();
